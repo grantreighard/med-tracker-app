@@ -66,6 +66,30 @@ class _MedTrackerState extends State<MedTracker> {
         .updateSuggestions(entries.map((entry) => entry.medication).toList());
   }
 
+  List<String> getAmOrPm(int twentyFour) {
+    String amOrPm = 'am';
+    String hour = '$twentyFour';
+
+    if (twentyFour >= 12) {
+      amOrPm = 'pm';
+    }
+
+    if (twentyFour > 12) {
+      hour = '${twentyFour - 12}';
+    }
+
+    if (twentyFour == 0) {
+      hour = '12';
+    }
+
+    return [hour, amOrPm];
+  }
+
+  String getFormattedDate(DateTime dateTime) {
+    List<String> hourAndAmOrPm = getAmOrPm(dateTime.hour);
+    return '${dateTime.month}/${dateTime.day}/${dateTime.year} at ${hourAndAmOrPm[0]}:${dateTime.minute}:${dateTime.second} ${hourAndAmOrPm[1]}';
+  }
+
   List<Widget> getForm() {
     print(entries.map((entry) => entry.medication).toList());
     if (isAdding) {
@@ -139,58 +163,69 @@ class _MedTrackerState extends State<MedTracker> {
           ),
           body: SafeArea(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 5,
-                      child: isAdding
-                          ? Text('')
-                          : FlatButton(
-                              child: Text('Add a medication entry'),
-                              onPressed: () {
-                                setState(() {
-                                  isAdding = true;
-                                });
-                              },
-                            ),
-                    ),
-                  ],
-                ),
                 Column(
                   children: getForm(),
                 ),
-                Column(children: [
-                  entries.length > 0 ? Text('Medication Entries') : Text(''),
-                  SizedBox(
-                    height: 300,
-                    child: ListView.builder(
-                      itemCount: entries.length,
-                      itemBuilder: (context, index) {
-                        final entry = entries[index];
+                Column(
+                  children: [
+                    !isAdding
+                        ? entries.length > 0
+                            ? Text('Medication entries')
+                            : Text('Add an entry to get started')
+                        : Text(''),
+                    SizedBox(
+                      height: 300,
+                      child: isAdding
+                          ? null
+                          : ListView.builder(
+                              itemCount: entries.length,
+                              itemBuilder: (context, index) {
+                                final entry = entries[index];
 
-                        return Dismissible(
-                          background: Container(
-                            alignment: Alignment.centerRight,
-                            color: Colors.red,
-                            child: Text('Delete'),
-                          ),
-                          key: Key(entry.medication),
-                          child: ListTile(
-                            title:
-                                Text('${entry.medication} ${entry.dateTime}'),
-                          ),
-                          onDismissed: (direction) {
+                                return Dismissible(
+                                  background: Container(
+                                    alignment: Alignment.centerRight,
+                                    color: Colors.red,
+                                    child: Padding(
+                                      padding:
+                                          const EdgeInsets.only(right: 10.0),
+                                      child: Text('Delete'),
+                                    ),
+                                  ),
+                                  key: Key(entry.medication),
+                                  child: ListTile(
+                                    title: Text(
+                                        '${entry.medication} ${getFormattedDate(entry.dateTime)}'),
+                                  ),
+                                  onDismissed: (direction) {
+                                    setState(() {
+                                      entries.removeAt(index);
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                    )
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 20.0),
+                      child: FloatingActionButton(
+                          backgroundColor: Colors.lightGreen,
+                          child: Icon(Icons.add),
+                          onPressed: () {
                             setState(() {
-                              entries.removeAt(index);
+                              isAdding = true;
                             });
-                          },
-                        );
-                      },
+                          }),
                     ),
-                  )
-                ]),
+                  ],
+                )
               ],
             ),
           )),
